@@ -1,40 +1,35 @@
-import React, { useCallback } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { StyleSheet, Text, View, Image, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp, useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Image, FlatList, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faChevronLeft, faMugSaucer, faStar } from '@fortawesome/free-solid-svg-icons';
-import { ImageSourcePropType } from 'react-native';
-
-type RootStackParamList = {
-  Home: undefined;
-  Details: { item: CoffeeItem };
-};
-
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
-type DetailsScreenRouteProp = RouteProp<RootStackParamList, 'Details'>;
+import { faMugSaucer, faStar } from '@fortawesome/free-solid-svg-icons';
 
 type CoffeeItem = {
   id: string;
   name: string;
   price: string;
-  image: ImageSourcePropType;
+  image: any;
 };
-
-const Stack = createStackNavigator<RootStackParamList>();
 
 const coffeeData: CoffeeItem[] = [
   { id: '1', name: 'Cappuccino', price: '$10', image: require('../assests/images/americano.jpg') },
-  { id: '2', name: 'Latte Coffee', price: '$10', image: require('../assests/images/CafeLatte.jpg') }, // Corrected path
+  { id: '2', name: 'Latte Coffee', price: '$10', image: require('../assests/images/CafeLatte.jpg') },
   { id: '3', name: 'Americano', price: '$10', image: require('../assests/images/Cappuccino.jpg') },
   { id: '4', name: 'Café Latte', price: '$10', image: require('../assests/images/Latte.jpg') },
+  { id: '5', name: 'Café Mocha', price: '$10', image: require('../assests/images/americano.jpg') },
+  { id: '6', name: 'Espresso', price: '$10', image: require('../assests/images/americano.jpg') },
 ];
 
+const coldCoffeeData: CoffeeItem[] = [
+  { id: '7', name: 'Cold Brew', price: '$10', image: require('../assests/images/CafeLatte.jpg') },
+  { id: '8', name: 'Iced Latte', price: '$10', image: require('../assests/images/CafeLatte.jpg') },
+  { id: '9', name: 'Frappuccino', price: '$10', image: require('../assests/images/coldimagethree.jpg') },
+  { id: '10', name: 'Iced Americano', price: '$10', image: require('../assests/images/CafeLatte.jpg') },
+  { id: '11', name: 'Iced Tea', price: '$10', image: require('../assests/images/CafeLatte.jpg') },
+  { id: '12', name: 'Iced Chai Latte', price: '$10', image: require('../assests/images/CafeLatte.jpg') },
+];
 
-const CoffeeCard: React.FC<{ item: CoffeeItem; onPress: () => void }> = React.memo(({ item, onPress }) => (
-  <TouchableOpacity style={styles.card} onPress={onPress}>
+const CoffeeCard: React.FC<{ item: CoffeeItem }> = ({ item }) => (
+  <TouchableOpacity style={styles.card}>
     <Image source={item.image} style={styles.cardImage} />
     <View style={styles.cardContent}>
       <Text style={styles.cardTitle}>{item.name}</Text>
@@ -51,15 +46,25 @@ const CoffeeCard: React.FC<{ item: CoffeeItem; onPress: () => void }> = React.me
       </View>
     </View>
   </TouchableOpacity>
-));
+);
 
-const HomeScreen: React.FC<{ navigation: HomeScreenNavigationProp }> = ({ navigation }) => {
-  const navigateToDetails = useCallback(
-    (item: CoffeeItem) => {
-      navigation.navigate('Details', { item });
-    },
-    [navigation]
+const CoffeeList: React.FC<{ data: CoffeeItem[]; title: string }> = ({ data, title }) => {
+  return (
+    <View>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <FlatList
+        data={data}
+        renderItem={({ item }) => <CoffeeCard item={item} />}
+        keyExtractor={item => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+      />
+    </View>
   );
+};
+
+const App: React.FC = () => {
+  const [selectedTab, setSelectedTab] = useState<'Hot Coffee' | 'Cold Coffee'>('Hot Coffee');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -70,55 +75,46 @@ const HomeScreen: React.FC<{ navigation: HomeScreenNavigationProp }> = ({ naviga
       <View style={styles.searchBar}>
         <Text style={styles.searchText}>Search your favorite Coffee</Text>
       </View>
-      <FlatList
-        data={coffeeData}
-        renderItem={({ item }) => <CoffeeCard item={item} onPress={() => navigateToDetails(item)} />}
-        keyExtractor={item => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-      />
-    </SafeAreaView>
-  );
-};
-
-const DetailsScreen: React.FC<{ route: DetailsScreenRouteProp }> = ({ route }) => {
-  const { item } = route.params;
-  const navigation = useNavigation();
-
-  return (
-    <SafeAreaView style={styles.detailsContainer}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <FontAwesomeIcon icon={faChevronLeft} size={25} style={styles.icon} />
-      </TouchableOpacity>
-      <Image source={item.image} style={styles.detailsImage} />
-      <Text style={styles.detailsTitle}>{item.name}</Text>
-      <Text style={styles.detailsPrice}>{item.price}</Text>
-      <Text style={styles.detailsInfo}>
-        A cappuccino is a brewed drink prepared from roasted coffee beans and almond milk.
-      </Text>
-      <Text style={styles.quantityText}>Quantity</Text>
-      <View style={styles.sizeContainer}>
-        {['Small', 'Medium', 'Large'].map(size => (
-          <TouchableOpacity key={size} style={styles.sizeButton}>
-            <Text style={styles.sizeButtonText}>{size}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[
+            styles.tabItem,
+            selectedTab === 'Hot Coffee' ? styles.activeTab : null,
+          ]}
+          onPress={() => setSelectedTab('Hot Coffee')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === 'Hot Coffee' ? styles.activeTabText : null,
+            ]}
+          >
+            Hot Coffee
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabItem,
+            selectedTab === 'Cold Coffee' ? styles.activeTab : null,
+          ]}
+          onPress={() => setSelectedTab('Cold Coffee')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === 'Cold Coffee' ? styles.activeTabText : null,
+            ]}
+          >
+            Cold Coffee
+          </Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.addToCartButton}>
-        <Text style={styles.addToCartButtonText}>Add To Cart</Text>
-      </TouchableOpacity>
+      {selectedTab === 'Hot Coffee' ? (
+        <CoffeeList data={coffeeData} title="Hot Coffee" />
+      ) : (
+        <CoffeeList data={coldCoffeeData} title="Cold Coffee" />
+      )}
     </SafeAreaView>
-  );
-};
-
-const App: React.FC = () => {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Details" component={DetailsScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
   );
 };
 
@@ -128,10 +124,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E1E',
     paddingHorizontal: 20,
     paddingTop: 10,
-  },
-  icon: {
-    color: '#49243E',
-    marginRight: 10,
   },
   header: {
     flexDirection: 'row',
@@ -172,115 +164,74 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#333333',
     borderRadius: 15,
-    padding: 10,
-    marginBottom: 20,
     width: '48%',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    marginBottom: 20,
+    overflow: 'hidden',
   },
   cardImage: {
     width: '100%',
-    height: 120,
-    borderRadius: 10,
-    resizeMode: 'cover',
+    height: Dimensions.get('window').height * 0.25,
   },
   cardContent: {
     padding: 10,
   },
   cardTitle: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginBottom: 5,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
   },
   cardPrice: {
-    color: 'white',
-    fontSize: 14,
-    marginTop: 5,
+    color: '#A96B56',
+    fontSize: 16,
   },
   reviewContainer: {
     flexDirection: 'row',
-    marginTop: 5,
+    marginTop: 10,
   },
   reviewIcon: {
-    color: '#ffdd00',
-    marginHorizontal: 1,
+    color: '#FFD700',
+    marginRight: 3,
   },
-  detailsContainer: {
-    flex: 1,
-    backgroundColor: '#1E1E1E',
-    padding: 20,
-  },
-  detailsImage: {
-    width: '100%',
-    height: 250,
-    borderRadius: 20,
-    marginBottom: 20,
-    resizeMode: 'cover',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
-  },
-  detailsTitle: {
+  sectionTitle: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 20,
+    marginVertical: 10,
   },
-  detailsPrice: {
-    color: 'white',
-    fontSize: 18,
-    marginTop: 10,
-    fontWeight: '600',
-  },
-  detailsInfo: {
-    color: 'gray',
-    marginTop: 20,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  quantityText: {
-    color: 'white',
-    fontSize: 18,
-    marginTop: 20,
-  },
-  sizeContainer: {
+  tabBar: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-  },
-  sizeButton: {
     backgroundColor: '#333333',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 20,
   },
-  sizeButtonText: {
-    color: 'white',
-  },
-  addToCartButton: {
-    backgroundColor: '#A96B56',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 30,
+  tabItem: {
+    flex: 1,
     alignItems: 'center',
+    paddingVertical: 10,
+    borderRadius: 20,
   },
-  addToCartButtonText: {
-    color: 'white',
+  activeTab: {
+    backgroundColor: '#A96B56',
+  },
+  tabText: {
+    color: 'gray',
     fontSize: 16,
+  },
+  activeTabText: {
+    color: 'white',
     fontWeight: 'bold',
+  },
+  icon: {
+    color: '#49243E',
+    marginRight: 10,
   },
 });
 
